@@ -5,8 +5,6 @@
 
 # Requires Chrome Driver: http://chromedriver.chromium.org/downloads
 
-import os
-import json
 import requests
 from time import sleep
 from bs4 import BeautifulSoup
