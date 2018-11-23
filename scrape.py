@@ -71,8 +71,15 @@ if __name__ == "__main__":
     
     if len(new_assets) != 0:
 
+        # Set download folder and allow multiple downloads
+        chromeOptions = webdriver.ChromeOptions()
+        downloads = "/Users/shane/Desktop/downloads"
+        prefs = {"download.default_directory" : downloads, "profile.default_content_setting_values.automatic_downloads": 1}
+        chromeOptions.add_experimental_option("prefs",prefs)
+
         # Setup Chrome driver
-        driver = webdriver.Chrome("/usr/local/bin/chromedriver") 
+        path = "/usr/local/bin/chromedriver"
+        driver = webdriver.Chrome(executable_path=path, options=chromeOptions) 
 
         # Authenticate with Ad Council 
         driver = siteLogin(driver, "sbqd2@mst.edu", "KMnr!Nov23!2018**")

@@ -11,7 +11,9 @@ Scrape new PSAs from the Ad Council website
 
 ## How it works
 
-`scrape.py` queries the Ad Council website for newly released radio productions by visiting this search url: [psacentral.org/search?s=0&...](https://www.psacentral.org/search?s=0&q=&t=radio&l=english&rd=past-3-months&ma=all&ms=all). It creates a list of recent asset IDs and compares it to previously downloaded asset IDs.
+`scrape.py` queries the Ad Council website for newly released radio productions by visiting this search url: [psacentral.org/search?s=0&...](https://www.psacentral.org/search?s=0&q=&t=radio&l=english&rd=past-3-months&ma=all&ms=all).
+
+It creates a list of recent asset IDs and compares it to previously downloaded asset IDs.
 
 New assets are downloaded using Selenium and the ChromeDriver.
 
@@ -37,4 +39,8 @@ Instructions are for MacOS Mojave
 
    Make sure that the path in `scrape.py` matches your path
 
-5. Run `python3.7 scrape.py`
+5. Update the download path to where you want the files to be downloaded
+
+   **This is important. Remove the download path code if you want it to default to your regular downloads folder.**
+
+6. Run `python3.7 scrape.py`
