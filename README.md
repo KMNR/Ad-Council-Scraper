@@ -1,4 +1,4 @@
-# KMNR-AdCouncilScraper
+# KMNR Ad Council Scraper
 
 Scrape new PSAs from the Ad Council website
 
