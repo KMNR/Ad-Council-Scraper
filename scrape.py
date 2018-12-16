@@ -1,99 +1,85 @@
-# KMNR Ad Council Scraper
-# Scrape the Ad Council Digital PSA library and download new PSAs
-# Made by Trainee Shane Bodimer Nov 2018
-# Python 3.7
-
-# Requires Chrome Driver: http://chromedriver.chromium.org/downloads
+#!/usr/bin/env python3
 
 import requests
-from time import sleep
+import os
+
 from bs4 import BeautifulSoup
-from selenium import webdriver
+from sys import argv
 
-def simpleGet(url):
-    return requests.get(url).text
+# search results of all english radio programming from the past 3 months
+SEARCH_URL = "https://www.psacentral.org/search?s=&q=&t=radio&l=english&rd=past-3-months&ma=all&ms=all"
 
-def simplePost(url, payload):
-    return requests.post(url, params=payload)
+# base URL for requesting campaign JSON objects
+API_URL = "https://www.psacentral.org/api/group?id={}"
 
-def siteLogin(driver, username, password):
-    driver.get("https://www.psacentral.org/authenticate/login")
-    driver.find_element_by_id("email").send_keys(username)
-    driver.find_element_by_id ("password").send_keys(password)
-    driver.find_element_by_class_name("LoginForm-submit").click()
-    return driver
 
-# Take driver to specified URL
-def goToUrl(driver, url):
-    driver.get(url)
-    return driver
+class Asset:
+    def __init__(self, url, title, length, format):
+        self.url = url
+        self.title = title
+        self.length = length
+        self.format = format
 
-# Find download button with id and press download
-def downloadAsset(driver, asset_id):
-    selector = '//div[@data-campaign-asset-group-id="'+asset_id+'"]'
-    asset = driver.find_element_by_xpath(selector)
-    download_button = asset.find_element_by_class_name("DirectDownloadLink") 
-    driver.execute_script("arguments[0].scrollIntoView();", download_button)
-    driver.execute_script("arguments[0].click();", download_button)
-    return driver
+        self.filename = f"{title} {length}.{format}"
 
-# Create array of radio ids from any URL
-def getRadioReleases(url):
-    ids = []
-    recent_html = simpleGet(url)
-    html = BeautifulSoup(recent_html, 'html.parser')
-    # Select all divs to find all asset ids
-    for p in html.select('div'):
-        if p.has_attr('data-campaign-asset-group-id'):
-            ids.append(p['data-campaign-asset-group-id'])
-    return ids
+
+def main(download_location):
+    campaign_ids = get_campaign_ids(SEARCH_URL)
+    assets = get_assets(campaign_ids)
+    download_assets(assets, download_location)
+
+
+# get unique ID for each campaign
+def get_campaign_ids(url):
+    campaign_ids = []
+
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    for campaign in soup.find_all("div", class_="GroupPromo"):
+        campaign_ids.append(campaign["data-campaign-asset-group-id"])
+
+    return campaign_ids
+
+
+# fetch asset information and return list of Asset objects
+def get_assets(campaign_ids):
+    assets = []
+
+    for id in campaign_ids:
+        # get JSON object
+        r = requests.get(API_URL.format(id))
+
+        # loop over assets
+        for a in r.json():
+            # only english assets
+            if a["language"] == "English":
+                # dumb additional condition to prevent downloading assets for US territories
+                if "Market Specific" in a["title"] and (not a["marketArea"] or "MO" not in a["marketArea"]):
+                    continue
+
+                # create asset object, striping leading colon from length and making format lowercase
+                assets.append(Asset(a["sourceUrl"], a["title"], a["length"][1:], a["fileFormat"].lower()))
+
+    return assets
+
+
+# download assets to specified location
+def download_assets(assets, download_location):
+    for asset in assets:
+        path = os.path.join(download_location, asset.title)
+
+        # if the directory doesn't exist, create it
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        # get asset data
+        r = requests.get(asset.url)
+
+        # write MP3 data to file
+        with open(os.path.join(path, asset.filename), "wb") as f:
+            f.write(r.content)
+
 
 if __name__ == "__main__":
-
-    # URL to search
-    # Searches for most recent radio releases in past 3 months
-    search_url = "https://www.psacentral.org/search?s=0&q=&t=radio&l=english&rd=past-3-months&ma=all&ms=all"
-
-    # Get the radio ids of recent releases
-    print("Getting recently updated radio releases...")
-    recent_ids = getRadioReleases(search_url)
-    print(len(recent_ids), "total assets found")
-
-    # Compare with history of downloaded campaigns
-    history = open("history.txt").read().splitlines()
-    new_assets = list(set(recent_ids) - set(history))
-    print(len(new_assets),"new radio assets found")
-
-    # Append new assets to history file
-    with open("history.txt", 'a') as file:
-        for n in new_assets:
-            file.write(n+"\n")
-    
-    if len(new_assets) != 0:
-
-        # Set download folder and allow multiple downloads
-        chromeOptions = webdriver.ChromeOptions()
-        downloads = "/Users/shane/Desktop/downloads"
-        prefs = {"download.default_directory" : downloads, "profile.default_content_setting_values.automatic_downloads": 1}
-        chromeOptions.add_experimental_option("prefs",prefs)
-
-        # Setup Chrome driver
-        path = "/usr/local/bin/chromedriver"
-        driver = webdriver.Chrome(executable_path=path, options=chromeOptions) 
-
-        # Authenticate with Ad Council 
-        driver = siteLogin(driver, "sbqd2@mst.edu", "KMnr!Nov23!2018**")
-
-        # Go to search results page
-        driver = goToUrl(driver, search_url)
-
-        # Download new assets
-        for i, n in enumerate(new_assets):
-            driver = downloadAsset(driver, n)
-            print(i+1,"of",len(new_assets),"downloaded")
-            sleep(3)
-        
-        # Quit browser
-        driver.quit()
-    
-    print("Process completed!")
+    main(argv[1])
