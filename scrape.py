@@ -71,7 +71,7 @@ def download_assets(assets, download_location):
 
         # if the directory doesn't exist, create it
         if not os.path.exists(path):
-            os.mkdir(path)
+            os.makedirs(path)
 
         # get asset data
         r = requests.get(asset.url)
