@@ -114,7 +114,7 @@ def download_assets(assets, download_location):
 
         # if the directory doesn't exist, create it
         if not os.path.exists(path):
-            os.makedirs(path)
+            os.mkdir(path)
 
         # get asset audio
         r = requests.get(asset.url)
