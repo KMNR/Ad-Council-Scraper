@@ -18,4 +18,4 @@ Scrape new PSAs from the Ad Council website
 
    `pip install -r requirements.txt`
 
-3. Run `./scrape.py <path>`, where `<path>` is the download location
+3. Run `./scrape.py <path>`, where `<path>` is the download location (directory must exist, and will be cleared before assets are downloaded)
