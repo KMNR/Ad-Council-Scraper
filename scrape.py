@@ -26,14 +26,14 @@ class Campaign:
 
 
 class Asset:
-    def __init__(self, campaign, url, title, length, format):
+    def __init__(self, campaign, url, title, length, file_format):
         self.campaign = campaign
         self.url = url
         self.title = title
         self.length = length
-        self.format = format
+        self.file_format = file_format
 
-        self.filename = f"{title} {length}.{format}"
+        self.filename = "{} {}.{}".format(title, length, file_format)
 
 
 def main(download_location):
