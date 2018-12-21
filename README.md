@@ -4,7 +4,7 @@ Scrape new PSAs from the Ad Council website
 
 ## Requirements
 
-- Python 3.7
+- Python 3
 - [Beautiful Soup 4](https://www.crummy.com/software/BeautifulSoup/)
 - [Requests](http://docs.python-requests.org/en/master/)
 
