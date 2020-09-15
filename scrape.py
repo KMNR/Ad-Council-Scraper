@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
-import requests
 import os
-
-from bs4 import BeautifulSoup
+import sys
 from shutil import rmtree
-from sys import argv
 
-# list of campaigns
-BROWSE_URL = "https://www.psacentral.org/browse-campaigns"
+import requests
+from bs4 import BeautifulSoup
 
-# base URL for requesting campaign JSON objects
-API_URL = "https://www.psacentral.org/api/group?id="
+# List of campaigns
+BROWSE_URL = 'https://www.adcouncil.org/all-campaigns'
 
-# list of campaigns that we don't want to download
+# Base URL for requesting campaign JSON objects
+API_URL = 'https://www.adcouncil.org/api/group?id='
+
+# List of campaigns that we don't want to download
 BLACKLIST = [
-    "https://www.psacentral.org/campaign/emergency-preparedness-nyc"
+    'https://www.adcouncil.org/campaign/emergency-preparedness-nyc'
 ]
 
 
@@ -32,71 +32,77 @@ class Asset:
         self.title = title
         self.length = length
         self.file_format = file_format
-
-        self.filename = "{} {}.{}".format(title, length, file_format)
+        self.filename = f'{title} {length}.{file_format}'
 
 
 def main(download_location):
     campaigns = get_campaigns(BROWSE_URL)
     assets = get_assets(campaigns)
-    clear_dir(download_location) # clear download location
-    download_assets(assets, download_location) # download assets to download location
+
+    # Exit with error if we found no assets
+    if not assets:
+        return -1
+
+    clear_dir(download_location) # Clear download location
+    download_assets(assets, download_location) # Download assets to download location
+
+    return 0
 
 
-# fetch campaign information and return list of Campaign objects
+# Fetch campaign information and return list of Campaign objects
 def get_campaigns(url):
-    # get HTML of campaign list and parse
+    # Get HTML of campaign list and parse
     r = requests.get(url)
-    soup = BeautifulSoup(r.text, "html.parser")
+    soup = BeautifulSoup(r.text, 'html.parser')
 
-    # find all campaign links
+    # Find all campaign links
     campaign_links = []
-    for tag in soup.find_all("div", class_="CampaignPromo-media"):
-        link = tag.a["href"]
+    for tag in soup.find_all('div', class_='SectionPagePromo-media'):
+        link = tag.a['href']
 
-        # prevent duplicates and blacklisted campaigns from being added
+        # Prevent duplicates and blacklisted campaigns from being added
         if link not in campaign_links and link not in BLACKLIST:
-            campaign_links.append(tag.a["href"])
+            campaign_links.append(tag.a['href'])
 
     campaigns = []
     for link in campaign_links:
         r = requests.get(link)
-        soup = BeautifulSoup(r.text, "html.parser")
+        soup = BeautifulSoup(r.text, 'html.parser')
 
-        # find all campaign IDs and names
-        for tag in soup.find_all("div", class_="GroupPromo"):
-            # only radio campaigns
-            if tag["data-type"] == "Radio":
-                campaign = Campaign(tag["data-campaign-asset-group-id"], tag["data-campaign-name"])
+        # Find all campaign IDs and names
+        for tag in soup.find_all('div', class_='AssetCardPromo'):
+            # Only radio campaigns
+            if tag['data-type'] == 'Radio':
+                campaign = Campaign(tag['data-campaign-asset-group-id'], tag['data-campaign-name'])
                 campaigns.append(campaign)
 
     return campaigns
 
 
-# fetch asset information and return list of Asset objects
+# Fetch asset information and return list of Asset objects
 def get_assets(campaigns):
     assets = []
 
     for campaign in campaigns:
-        # get JSON object
+        # Get JSON object
         r = requests.get(API_URL + campaign.id)
 
-        # loop over assets
+        # Loop over assets
         for a in r.json():
-            # only english assets
-            if a["language"] == "English":
-                # prevent downloading market specific assets if market area is not specified or not MO
-                if "Market Specific" in a["title"] and (not a["marketArea"] or "MO" not in a["marketArea"]):
+            # Only english assets
+            if a['language'] == 'English':
+                # Prevent downloading market specific assets if market area is not specified or not MO
+                if 'Market Specific' in a['title'] and (not a['marketArea'] or 'MO' not in a['marketArea']):
                     continue
 
-                # create asset object, stripping leading colon from length and making format lowercase
-                asset = Asset(campaign, a["sourceUrl"], a["title"], a["length"][1:], a["fileFormat"].lower())
+                # Create asset object, stripping leading colon from length and making format lowercase
+                asset = Asset(campaign, a['sourceUrl'], a['title'], a['length'][1:], a['fileFormat'].lower())
                 assets.append(asset)
 
     return assets
 
 
-# clear all files and folders out of the specified path (USE WITH CARE)
+# Clear all files and folders out of the specified path (USE WITH CARE)
 def clear_dir(path):
     for filename in os.listdir(path):
         file_path = os.path.join(path, filename)
@@ -107,22 +113,23 @@ def clear_dir(path):
             rmtree(file_path)
 
 
-# download assets to specified location
+# Download assets to specified location
 def download_assets(assets, download_location):
     for asset in assets:
         path = os.path.join(download_location, asset.campaign.name)
 
-        # if the directory doesn't exist, create it
+        # If the directory doesn't exist, create it
         if not os.path.exists(path):
             os.mkdir(path)
 
-        # get asset audio
+        # Get asset audio
         r = requests.get(asset.url)
 
-        # write audio data to file
-        with open(os.path.join(path, asset.filename), "wb") as f:
+        # Write audio data to file
+        with open(os.path.join(path, asset.filename), 'wb') as f:
             f.write(r.content)
 
 
-if __name__ == "__main__":
-    main(argv[1])
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1]))
+
