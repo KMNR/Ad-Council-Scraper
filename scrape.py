@@ -32,7 +32,7 @@ class Asset:
         self.title = title
         self.length = length
         self.file_format = file_format
-        self.filename = f'{title} {length}.{file_format}'
+        self.filename = '{} {}.{}'.format(title, length, file_format)
 
 
 def main(download_location):
