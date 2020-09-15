@@ -16,6 +16,6 @@ Scrape new PSAs from the Ad Council website
 
 2. Install required dependencies
 
-   `pip install -r requirements.txt`
+   `pip install -r requirements.txt` or `pipenv install` (if developing locally)
 
 3. Run `./scrape.py <path>`, where `<path>` is the download location (directory must exist, and will be cleared before assets are downloaded)
