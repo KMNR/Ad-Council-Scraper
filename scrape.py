@@ -14,14 +14,15 @@ BROWSE_URL = 'https://www.adcouncil.org/all-campaigns'
 API_URL = 'https://www.adcouncil.org/api/group?id='
 
 # List of campaigns that we don't want to download
-BLACKLIST = [
-    'https://www.adcouncil.org/campaign/emergency-preparedness-nyc'
-]
+BLACKLIST = (
+    'https://www.adcouncil.org/campaign/emergency-preparedness-nyc',
+    'https://www.adcouncil.org/campaign/autism-awareness'  # FUCK eugenicist scum
+)
 
 
 class Campaign:
-    def __init__(self, id, name):
-        self.id = id
+    def __init__(self, id_, name):
+        self.id = id_
         self.name = name
 
 
@@ -43,8 +44,8 @@ def main(download_location):
     if not assets:
         return -1
 
-    clear_dir(download_location) # Clear download location
-    download_assets(assets, download_location) # Download assets to download location
+    clear_dir(download_location)  # Clear download location
+    download_assets(assets, download_location)  # Download assets to download location
 
     return 0
 
@@ -132,4 +133,3 @@ def download_assets(assets, download_location):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1]))
-
